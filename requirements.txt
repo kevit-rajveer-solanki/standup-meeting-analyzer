@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+requests
+pandas
+python-dateutil
+pydantic
+pydantic-settings
+pymongo
+matplotlib
+msal
+streamlit
