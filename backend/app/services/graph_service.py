@@ -82,8 +82,10 @@ class GraphService:
 
     def get_attendance_records(self, report_url: str) -> List[Dict[str, Any]]:
         """Fetches attendance records from a specific report URL."""
+        # Select both email and the intervals to get join/leave times.
+        url_with_params = f"{report_url}?$select=emailAddress,attendanceIntervals"
         try:
-            resp = requests.get(report_url, headers=self.headers)
+            resp = requests.get(url_with_params, headers=self.headers)
             if resp.status_code == 200:
                 return resp.json().get('value', [])
         except requests.RequestException as e:

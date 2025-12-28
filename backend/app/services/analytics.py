@@ -99,23 +99,37 @@ class AnalyticsService:
                 if details['team'] in ["External/Guest", "Unknown", "Unassigned"]:
                     continue
 
+                join_time = None
+                leave_time = None
                 is_on_time = False
                 intervals = rec.get('attendanceIntervals', [])
                 if intervals:
                     try:
-                        join_time = min(parser.parse(i['joinDateTime']) for i in intervals if i.get('joinDateTime'))
-                        if (join_time - meeting_dt).total_seconds() / 60 <= 5:
-                            is_on_time = True
+                        join_times = [parser.parse(i['joinDateTime']) for i in intervals if i.get('joinDateTime')]
+                        leave_times = [parser.parse(i['leaveDateTime']) for i in intervals if i.get('leaveDateTime')]
+
+                        if join_times:
+                            first_join = min(join_times)
+                            join_time = first_join.time().isoformat(timespec='seconds')
+                            if (first_join - meeting_dt).total_seconds() / 60 <= 5:
+                                is_on_time = True
+
+                        if leave_times:
+                            last_leave = max(leave_times)
+                            leave_time = last_leave.time().isoformat(timespec='seconds')
+
                     except (ValueError, TypeError):
-                        pass # Ignore if join times are malformed
+                        pass  # Ignore if times are malformed
 
                 all_attendees.append({
                     "Name": details['name'],
                     "Team": details['team'],
                     "Date": str(meeting_date),
-                    "OnTime": is_on_time
+                    "OnTime": is_on_time,
+                    "JoinTime": join_time,
+                    "LeaveTime": leave_time
                 })
-        
+
         if not all_attendees:
             return {"message": "Meetings were found, but no valid attendee data could be processed."}
 
@@ -143,5 +157,6 @@ class AnalyticsService:
             "avg_duration_minutes": round(avg_duration, 1),
             "avg_users_per_meeting": round(avg_users_per_meeting, 1),
             "team_punctuality_avg": round(person_stats['Punctuality %'].mean(), 1),
-            "performance_data": person_stats.to_dict('records')
+            "performance_data": person_stats.to_dict('records'),
+            "daily_attendance": all_attendees
         }

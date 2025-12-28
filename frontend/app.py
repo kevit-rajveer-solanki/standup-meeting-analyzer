@@ -95,7 +95,7 @@ if btn:
                     bottom_5 = sorted_df.tail(5)
 
                     # --- Tabs for Display ---
-                    tab1, tab2 = st.tabs(["🏆 Performance Highlights", "👥 Full Team Report"])
+                    tab1, tab2, tab3 = st.tabs(["🏆 Performance Highlights", "👥 Full Team Report", "⏰ Join/Leave Details"])
 
                     with tab1:
                         st.subheader("Top 5 Attendees")
@@ -103,8 +103,8 @@ if btn:
                             top_5[['Name', 'Team', 'Attendance %', 'Punctuality %']]
                             .style.background_gradient(subset=['Attendance %'], cmap="Greens")
                             .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
-                            help="Top 5 team members by attendance percentage."
                         )
+                        st.caption("Top 5 team members by attendance percentage.")
 
                         st.divider()
 
@@ -113,8 +113,8 @@ if btn:
                             bottom_5[['Name', 'Team', 'Attendance %', 'Punctuality %']]
                             .style.background_gradient(subset=['Attendance %'], cmap="Reds_r")
                             .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
-                            help="Bottom 5 team members by attendance percentage."
                         )
+                        st.caption("Bottom 5 team members by attendance percentage.")
 
                     with tab2:
                         st.subheader("Full Team Breakdown")
@@ -125,8 +125,23 @@ if btn:
                             .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
                             hide_index=True,
                             use_container_width=True,
-                            help="Full report for all team members. Attendance % = (Days Attended / Total Meetings) * 100. Punctuality % = (Days On Time / Days Attended) * 100."
                         )
+                        st.caption("Full report for all team members. Attendance % = (Days Attended / Total Meetings) * 100. Punctuality % = (Days On Time / Days Attended) * 100.")
+
+                    with tab3:
+                        st.subheader("Daily Join and Leave Times")
+                        if 'daily_attendance' in data and data['daily_attendance']:
+                            daily_df = pd.DataFrame(data['daily_attendance'])
+                            daily_df['JoinTime'] = daily_df['JoinTime'].fillna('N/A')
+                            daily_df['LeaveTime'] = daily_df['LeaveTime'].fillna('N/A')
+                            st.dataframe(
+                                daily_df[['Name', 'Date', 'JoinTime', 'LeaveTime']],
+                                hide_index=True,
+                                use_container_width=True
+                            )
+                            st.caption("Shows the first join and last leave time for each participant in each meeting.")
+                        else:
+                            st.warning("No daily attendance data available.")
 
         except requests.ConnectionError as e:
             st.error(f"Connection Error: Could not connect to the backend at {BACKEND_URL}. Please ensure it is running.")
