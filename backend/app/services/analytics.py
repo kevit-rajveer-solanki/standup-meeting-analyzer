@@ -6,7 +6,7 @@ import pytz
 from typing import Dict, Any, List
 
 from ..services.graph_service import GraphService
-from ..utils.date_utils import is_working_day
+from ..utils.date_utils import is_working_day, count_working_days
 from ..models.schemas import StandupMeetingConfig
 
 # Configure logging
@@ -57,7 +57,7 @@ class AnalyticsService:
         if not meeting_id:
             logger.error(f"Meeting ID for link '{project_config.meeting_link}' not found.")
             return {"error": "Meeting not found"}
-
+            
         # 2. Fetch and Filter Reports
         all_reports = self.graph_service.get_attendance_reports(organizer_id, meeting_id)
         if not all_reports:
@@ -121,7 +121,7 @@ class AnalyticsService:
                             first_join_ist = first_join_utc.astimezone(ist_zone)
                             join_time = first_join_ist.time().isoformat(timespec='seconds')
                             
-                            # Punctuality check remains against the original UTC meeting time
+                            # Punctuality check against the actual meeting start time
                             if (first_join_utc - meeting_dt).total_seconds() / 60 <= 5:
                                 is_on_time = True
 
@@ -162,8 +162,11 @@ class AnalyticsService:
         # Team-specific metrics
         avg_duration = sum(meeting_durations) / len(meeting_durations) if meeting_durations else 0
         avg_users_per_meeting = df.groupby('Date')['Name'].nunique().mean()
+        working_days_in_range = count_working_days(start_date_str, end_date_str)
+
 
         return {
+            "working_days": working_days_in_range,
             "total_meetings": total_meetings,
             "total_people": df['Name'].nunique(),
             "avg_duration_minutes": round(avg_duration, 1),

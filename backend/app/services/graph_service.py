@@ -91,3 +91,15 @@ class GraphService:
         except requests.RequestException as e:
             logger.error(f"Request error getting attendance records from {report_url}: {e}")
         return []
+
+    def get_online_meeting(self, user_id: str, meeting_id: str) -> Optional[Dict[str, Any]]:
+        """Fetches the main onlineMeeting object."""
+        url = f"{GRAPH_ENDPOINT}/users/{user_id}/onlineMeetings/{meeting_id}"
+        try:
+            resp = requests.get(url, headers=self.headers)
+            if resp.status_code == 200:
+                return resp.json()
+            logger.warning(f"Could not get online meeting {meeting_id}. Status: {resp.status_code}")
+        except requests.RequestException as e:
+            logger.error(f"Request error getting online meeting {meeting_id}: {e}")
+        return None

@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 import pandas as pd
 
-st.set_page_config(layout="wide", page_title="Standup Performance Analytics V2")
-st.title("Standup Performance Analytics")
+
+st.set_page_config(layout="wide", page_title="Standup Performance Analyzer V2")
+st.title("Standup Performance Analyzer")
 
 BACKEND_URL = "http://localhost:8000"
 
@@ -41,6 +42,15 @@ def get_all_projects():
 def render_analytics_page():
     # --- Sidebar for Analytics ---
     with st.sidebar:
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.image(
+                "https://kevit.io/wp-content/uploads/2020/03/Kevit.svg",
+                width=100
+            )
+        with col2:
+            st.markdown("## Standup Performance Analyzer")
+
         st.header("Report Settings")
         
         projects = get_projects()
@@ -76,23 +86,28 @@ def render_analytics_page():
                         st.warning(data.get("message", "No attendance data found for this period."))
                     else:
                         # --- KPIs ---
-                        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+                        kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
                         kpi1.metric(
+                            "Working Days",
+                            data.get('working_days', 0),
+                            help="Total number of working days (Mon-Fri) in the selected date range."
+                        )
+                        kpi2.metric(
                             "Total Meetings",
                             data.get('total_meetings', 0),
                             help="Total number of meetings that occurred on working days within the selected date range."
                         )
-                        kpi2.metric(
+                        kpi3.metric(
                             "Avg. Duration",
                             f"{data.get('avg_duration_minutes', 0):.1f} min",
                             help="Average duration of each meeting in minutes."
                         )
-                        kpi3.metric(
+                        kpi4.metric(
                             "Avg. Team Punctuality",
                             f"{data.get('team_punctuality_avg', 0):.1f}%",
                             help="The average on-time joining percentage across all team members."
                         )
-                        kpi4.metric(
+                        kpi5.metric(
                             "Avg. Attendees",
                             f"{data.get('avg_users_per_meeting', 0):.1f}",
                             help="Average number of team members attending each meeting."
@@ -102,6 +117,8 @@ def render_analytics_page():
 
                         # --- DataFrames ---
                         df = pd.DataFrame(data['performance_data'])
+                        # Exclude 'Unknown' users from the DataFrame
+                        df = df[df['Name'] != 'Unknown']
                         df.rename(columns={'DaysAttended': 'Days Attended', 'DaysOnTime': 'Days On Time'}, inplace=True)
                         
                         sorted_df = df.sort_values(by='Attendance %', ascending=False)
@@ -112,23 +129,37 @@ def render_analytics_page():
                         sub_tab1, sub_tab2, sub_tab3 = st.tabs(["Performance Highlights", "Full Team Report", "Join/Leave Details"])
 
                         with sub_tab1:
-                            st.subheader("Top 5 Attendees")
-                            st.dataframe(
-                                top_5[['Name', 'Team', 'Attendance %', 'Punctuality %']]
-                                .style.background_gradient(subset=['Attendance %'], cmap="Greens")
-                                .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
-                            )
-                            st.caption("Top 5 team members by attendance percentage.")
+                            chart_data = pd.concat([top_5, bottom_5])
+
+                            st.subheader("Attendance Rate (%)")
+                            st.bar_chart(chart_data, x='Name', y='Attendance %', color="#0068C9")
+
+                            st.subheader("Punctuality Rate (%)")
+                            st.bar_chart(chart_data, x='Name', y='Punctuality %', color="#0068C9")
 
                             st.divider()
+                            
+                            st.subheader("Attendance & Punctuality Highlights")
+                            
+                            # Custom function to apply color based on whether the row is in top or bottom 5
+                            def style_top_bottom(row):
+                                styles = [''] * len(row)
+                                if row['Name'] in top_5['Name'].values:
+                                    # Using a light green for the 'Attendance %' cell
+                                    styles[row.keys().get_loc('Attendance %')] = 'background-color: #d4edda'
+                                elif row['Name'] in bottom_5['Name'].values:
+                                    # Using a light red for the 'Attendance %' cell
+                                    styles[row.keys().get_loc('Attendance %')] = 'background-color: #f8d7da'
+                                return styles
 
-                            st.subheader("Bottom 5 Attendees")
                             st.dataframe(
-                                bottom_5[['Name', 'Team', 'Attendance %', 'Punctuality %']]
-                                .style.background_gradient(subset=['Attendance %'], cmap="Reds_r")
+                                chart_data[['Name', 'Attendance %', 'Punctuality %']]
+                                .style
+                                .apply(style_top_bottom, axis=1)
                                 .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
+                                hide_index=True
                             )
-                            st.caption("Bottom 5 team members by attendance percentage.")
+                            st.caption("Highlighting top and bottom 5 performers by attendance.")
 
                         with sub_tab2:
                             st.subheader("Full Team Breakdown")
@@ -140,7 +171,6 @@ def render_analytics_page():
                                 hide_index=True,
                                 width="stretch",
                             )
-                            st.caption("Full report for all team members. Attendance % = (Days Attended / Total Meetings) * 100. Punctuality % = (Days OnTime / Days Attended) * 100.")
 
                         with sub_tab3:
                             st.subheader("Daily Join and Leave Times")
@@ -153,7 +183,6 @@ def render_analytics_page():
                                     hide_index=True,
                                     width="stretch"
                                 )
-                                st.caption("Shows the first join and last leave time for each participant in each meeting.")
                             else:
                                 st.warning("No daily attendance data available.")
 
