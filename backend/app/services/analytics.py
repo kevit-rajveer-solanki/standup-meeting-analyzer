@@ -95,10 +95,6 @@ class AnalyticsService:
                 email = rec.get('emailAddress')
                 details = self._get_user_details(email)
 
-                # Skip Guests and External users as per requirements
-                if details['team'] in ["External/Guest", "Unknown", "Unassigned"]:
-                    continue
-
                 join_time = None
                 leave_time = None
                 is_on_time = False

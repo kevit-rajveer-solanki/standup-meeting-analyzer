@@ -56,7 +56,7 @@ def render_analytics_page():
         s_date = st.date_input("Start Date")
         e_date = st.date_input("End Date")
         
-        btn = st.button("Generate Report", type="primary", use_container_width=True)
+        btn = st.button("Generate Report", type="primary", width="stretch")
 
     # --- Main Content ---
     st.header("Analytics Dashboard")
@@ -112,7 +112,7 @@ def render_analytics_page():
                         bottom_5 = sorted_df.tail(5)
 
                         # --- Tabs for Display ---
-                        sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🏆 Performance Highlights", "👥 Full Team Report", "⏰ Join/Leave Details"])
+                        sub_tab1, sub_tab2, sub_tab3 = st.tabs(["Performance Highlights", "Full Team Report", "Join/Leave Details"])
 
                         with sub_tab1:
                             st.subheader("Top 5 Attendees")
@@ -141,7 +141,7 @@ def render_analytics_page():
                                 .style.background_gradient(subset=['Attendance %'], cmap="Blues")
                                 .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
                                 hide_index=True,
-                                use_container_width=True,
+                                width="stretch",
                             )
                             st.caption("Full report for all team members. Attendance % = (Days Attended / Total Meetings) * 100. Punctuality % = (Days OnTime / Days Attended) * 100.")
 
@@ -154,7 +154,7 @@ def render_analytics_page():
                                 st.dataframe(
                                     daily_df[['Name', 'Date', 'JoinTime', 'LeaveTime']],
                                     hide_index=True,
-                                    use_container_width=True
+                                    width="stretch"
                                 )
                                 st.caption("Shows the first join and last leave time for each participant in each meeting.")
                             else:
@@ -183,7 +183,7 @@ def render_manage_projects_page():
                 is_active = st.checkbox("Is Active", value=project_to_edit['is_active'])
                 
                 update_btn, cancel_btn = st.columns(2)
-                if update_btn.form_submit_button("Update Project", use_container_width=True):
+                if update_btn.form_submit_button("Update Project", width="stretch"):
                     payload = {"organizer_email": email, "meeting_link": link, "is_active": is_active}
                     try:
                         res = requests.put(f"{BACKEND_URL}/projects/{project_tag_to_edit}", json=payload)
@@ -197,7 +197,7 @@ def render_manage_projects_page():
                     except requests.ConnectionError:
                         st.error("Connection Error.")
                 
-                if cancel_btn.form_submit_button("Cancel", use_container_width=True):
+                if cancel_btn.form_submit_button("Cancel", width="stretch"):
                     del st.session_state['editing_project']
                     st.rerun()
 
@@ -247,11 +247,11 @@ def render_manage_projects_page():
             
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Edit", key=f"edit_{project['project_tag']}", use_container_width=True):
+                if st.button("Edit", key=f"edit_{project['project_tag']}", width="stretch"):
                     st.session_state['editing_project'] = project['project_tag']
                     st.rerun()
             with col2:
-                if st.button("Delete", key=f"delete_{project['project_tag']}", use_container_width=True, type="primary"):
+                if st.button("Delete", key=f"delete_{project['project_tag']}", width="stretch", type="primary"):
                     try:
                         res = requests.delete(f"{BACKEND_URL}/projects/{project['project_tag']}")
                         if res.status_code == 200:
