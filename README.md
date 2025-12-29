@@ -39,18 +39,18 @@ The application follows a modern, decoupled architecture:
 .
 ├── backend/
 │   ├── app/
-│   │   ├── auth/          # MS Graph API authentication
-│   │   ├── db/            # MongoDB connection and repositories
-│   │   ├── models/        # Pydantic data schemas
-│   │   ├── services/      # Business logic and Graph API calls
-│   │   ├── utils/         # Helper utilities
-│   │   ├── config.py      # Environment variable management
-│   │   └── main.py        # FastAPI application entrypoint
-│   └── requirements.txt
+│   ├── auth/          # MS Graph API authentication
+│   ├── db/            # MongoDB connection and repositories
+│   ├── models/        # Pydantic data schemas
+│   ├── services/      # Business logic and Graph API calls
+│   ├── utils/         # Helper utilities
+│   ├── config.py      # Environment variable management
+│   └── main.py        # FastAPI application entrypoint
+│   
 │
 ├── frontend/
 │   ├── app.py             # Streamlit application
-│   └── requirements.txt
+│   
 │
 ├── .env                   # (You create this) Environment variables
 ├── example.env            # Example environment file
@@ -100,8 +100,7 @@ Install the required packages for both the frontend and backend.
 
 ```shell
 # From the project root directory
-pip install -r backend/requirements.txt
-pip install -r frontend/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Step 4: Configure Environment Variables
