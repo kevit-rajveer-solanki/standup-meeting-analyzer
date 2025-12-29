@@ -5,13 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo.database import Database
 
 # Project imports
-from app.auth.graph_auth import get_auth_token
-from app.config import settings  # This will fail fast if env vars are missing
-from app.db.mongo import mongo_manager, get_db
-from app.db.repositories import ProjectRepository
-from app.models.schemas import AnalysisRequest, ProjectTag, StandupMeetingConfig, ProjectCreate, ProjectUpdate
-from app.services.analytics import AnalyticsService
-from app.services.graph_service import GraphService
+from .auth.graph_auth import get_auth_token
+from .config import settings  # This will fail fast if env vars are missing
+from .db.mongo import mongo_manager, get_db
+from .db.repositories import ProjectRepository
+from .models.schemas import AnalysisRequest, ProjectTag, StandupMeetingConfig, ProjectCreate, ProjectUpdate
+from .services.analytics import AnalyticsService
+from .services.graph_service import GraphService
 from typing import List
 
 # Configure logging

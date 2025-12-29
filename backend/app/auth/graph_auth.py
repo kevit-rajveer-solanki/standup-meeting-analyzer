@@ -2,7 +2,7 @@ import logging
 import msal
 from typing import Optional
 
-from app.config import settings
+from ..config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)

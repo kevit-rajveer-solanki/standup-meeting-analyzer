@@ -4,7 +4,7 @@ from pymongo import ASCENDING
 from pymongo.errors import PyMongoError
 from typing import List, Optional
 
-from app.models.schemas import StandupMeetingConfig, ProjectTag, ProjectCreate, ProjectUpdate
+from ..models.schemas import StandupMeetingConfig, ProjectTag, ProjectCreate, ProjectUpdate
 from datetime import datetime
 # Configure logging
 logger = logging.getLogger(__name__)

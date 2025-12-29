@@ -2,11 +2,12 @@ import logging
 from datetime import datetime
 from dateutil import parser
 import pandas as pd
+import pytz
 from typing import Dict, Any, List
 
-from app.services.graph_service import GraphService
-from app.utils.date_utils import is_working_day
-from app.models.schemas import StandupMeetingConfig
+from ..services.graph_service import GraphService
+from ..utils.date_utils import is_working_day
+from ..models.schemas import StandupMeetingConfig
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -109,18 +110,25 @@ class AnalyticsService:
                 intervals = rec.get('attendanceIntervals', [])
                 if intervals:
                     try:
+                        utc_zone = pytz.utc
+                        ist_zone = pytz.timezone('Asia/Kolkata')
+
                         join_times = [parser.parse(i['joinDateTime']) for i in intervals if i.get('joinDateTime')]
                         leave_times = [parser.parse(i['leaveDateTime']) for i in intervals if i.get('leaveDateTime')]
 
                         if join_times:
-                            first_join = min(join_times)
-                            join_time = first_join.time().isoformat(timespec='seconds')
-                            if (first_join - meeting_dt).total_seconds() / 60 <= 5:
+                            first_join_utc = min(join_times)
+                            first_join_ist = first_join_utc.astimezone(ist_zone)
+                            join_time = first_join_ist.time().isoformat(timespec='seconds')
+                            
+                            # Punctuality check remains against the original UTC meeting time
+                            if (first_join_utc - meeting_dt).total_seconds() / 60 <= 5:
                                 is_on_time = True
 
                         if leave_times:
-                            last_leave = max(leave_times)
-                            leave_time = last_leave.time().isoformat(timespec='seconds')
+                            last_leave_utc = max(leave_times)
+                            last_leave_ist = last_leave_utc.astimezone(ist_zone)
+                            leave_time = last_leave_ist.time().isoformat(timespec='seconds')
 
                     except (ValueError, TypeError):
                         pass  # Ignore if times are malformed

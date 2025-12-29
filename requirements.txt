@@ -9,3 +9,4 @@ pymongo
 matplotlib
 msal
 streamlit
+pytz
