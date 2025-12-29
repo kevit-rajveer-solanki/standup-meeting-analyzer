@@ -92,8 +92,16 @@ class AnalyticsService:
             records = self.graph_service.get_attendance_records(records_url)
 
             for rec in records:
+                # Exclude optional attendees from the analysis
+                if rec.get('role') == 'optional':
+                    continue
+
                 email = rec.get('emailAddress')
                 details = self._get_user_details(email)
+
+                # Exclude guests and external users
+                if details['team'] == "External/Guest":
+                    continue
 
                 join_time = None
                 leave_time = None

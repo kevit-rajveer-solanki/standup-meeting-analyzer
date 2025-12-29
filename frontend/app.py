@@ -2,15 +2,12 @@ import streamlit as st
 import requests
 import pandas as pd
 
-# --- Page Configuration ---
 st.set_page_config(layout="wide", page_title="Standup Performance Analytics V2")
 st.title("Standup Performance Analytics")
 
-# --- Backend Configuration ---
 BACKEND_URL = "http://localhost:8000"
 
 
-# --- Helper Functions ---
 @st.cache_data(ttl=300)  # Cache for 5 minutes
 def get_projects():
     """Fetches the list of active projects from the backend."""
