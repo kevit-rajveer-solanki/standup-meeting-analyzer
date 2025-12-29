@@ -40,28 +40,26 @@ def get_all_projects():
         return []
 
 
-# --- Sidebar Navigation ---
-with st.sidebar:
-    st.header("Navigation")
-    page = st.radio("Go to", ["Analytics", "Manage Projects"])
-
 # --- Page Rendering ---
 def render_analytics_page():
-    st.header("Report Settings")
-    
-    projects = get_projects()
-    if not projects:
-        st.warning("No active projects found. Please configure projects in the backend.")
-        st.stop()
+    # --- Sidebar for Analytics ---
+    with st.sidebar:
+        st.header("Report Settings")
         
-    project_tag = st.selectbox("Select Project", options=projects)
-    
-    s_date = st.date_input("Start Date")
-    e_date = st.date_input("End Date")
-    
-    btn = st.button("Generate Report", type="primary", use_container_width=True)
+        projects = get_projects()
+        if not projects:
+            st.warning("No active projects found. Please configure projects in the backend.")
+            st.stop()
+            
+        project_tag = st.selectbox("Select Project", options=projects)
+        
+        s_date = st.date_input("Start Date")
+        e_date = st.date_input("End Date")
+        
+        btn = st.button("Generate Report", type="primary", use_container_width=True)
 
     # --- Main Content ---
+    st.header("Analytics Dashboard")
     if btn:
         with st.spinner("Analyzing standup data... This may take a moment."):
             try:
@@ -114,9 +112,9 @@ def render_analytics_page():
                         bottom_5 = sorted_df.tail(5)
 
                         # --- Tabs for Display ---
-                        tab1, tab2, tab3 = st.tabs(["🏆 Performance Highlights", "👥 Full Team Report", "⏰ Join/Leave Details"])
+                        sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🏆 Performance Highlights", "👥 Full Team Report", "⏰ Join/Leave Details"])
 
-                        with tab1:
+                        with sub_tab1:
                             st.subheader("Top 5 Attendees")
                             st.dataframe(
                                 top_5[['Name', 'Team', 'Attendance %', 'Punctuality %']]
@@ -135,7 +133,7 @@ def render_analytics_page():
                             )
                             st.caption("Bottom 5 team members by attendance percentage.")
 
-                        with tab2:
+                        with sub_tab2:
                             st.subheader("Full Team Breakdown")
                             # Use a tooltip on the dataframe itself for the main explanation
                             st.dataframe(
@@ -147,7 +145,7 @@ def render_analytics_page():
                             )
                             st.caption("Full report for all team members. Attendance % = (Days Attended / Total Meetings) * 100. Punctuality % = (Days OnTime / Days Attended) * 100.")
 
-                        with tab3:
+                        with sub_tab3:
                             st.subheader("Daily Join and Leave Times")
                             if 'daily_attendance' in data and data['daily_attendance']:
                                 daily_df = pd.DataFrame(data['daily_attendance'])
@@ -166,6 +164,8 @@ def render_analytics_page():
                 st.error(f"Connection Error: Could not connect to the backend at {BACKEND_URL}. Please ensure it is running.")
             except Exception as e:
                 st.error(f"An unexpected error occurred: {e}")
+    else:
+        st.info("Select a project and date range in the sidebar to generate a report.")
 
 def render_manage_projects_page():
     st.header("Manage Projects")
@@ -191,7 +191,7 @@ def render_manage_projects_page():
                             st.success("Project updated successfully.")
                             del st.session_state['editing_project']
                             st.cache_data.clear()
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error(f"Failed to update project: {res.json().get('detail', res.text)}")
                     except requests.ConnectionError:
@@ -199,7 +199,7 @@ def render_manage_projects_page():
                 
                 if cancel_btn.form_submit_button("Cancel", use_container_width=True):
                     del st.session_state['editing_project']
-                    st.experimental_rerun()
+                    st.rerun()
 
     # --- Add New Project Form ---
     with st.form("add_project_form", clear_on_submit=True):
@@ -249,7 +249,7 @@ def render_manage_projects_page():
             with col1:
                 if st.button("Edit", key=f"edit_{project['project_tag']}", use_container_width=True):
                     st.session_state['editing_project'] = project['project_tag']
-                    st.experimental_rerun()
+                    st.rerun()
             with col2:
                 if st.button("Delete", key=f"delete_{project['project_tag']}", use_container_width=True, type="primary"):
                     try:
@@ -257,13 +257,17 @@ def render_manage_projects_page():
                         if res.status_code == 200:
                             st.success(f"Project '{project['project_tag']}' deleted successfully.")
                             st.cache_data.clear()
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error(f"Failed to delete project. Status: {res.status_code}")
                     except requests.ConnectionError:
                         st.error("Connection Error: Could not connect to the backend.")
 
-if page == "Analytics":
+# --- Main Navigation ---
+tab1, tab2 = st.tabs(["Analytics", "Manage Projects"])
+
+with tab1:
     render_analytics_page()
-elif page == "Manage Projects":
+
+with tab2:
     render_manage_projects_page()
