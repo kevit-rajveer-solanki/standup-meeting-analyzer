@@ -9,7 +9,7 @@ from app.auth.graph_auth import get_auth_token
 from app.config import settings  # This will fail fast if env vars are missing
 from app.db.mongo import mongo_manager, get_db
 from app.db.repositories import ProjectRepository
-from app.models.schemas import AnalysisRequest, ProjectTag
+from app.models.schemas import AnalysisRequest, ProjectTag, StandupMeetingConfig, ProjectCreate, ProjectUpdate
 from app.services.analytics import AnalyticsService
 from app.services.graph_service import GraphService
 from typing import List
@@ -53,7 +53,7 @@ app.add_middleware(
 )
 
 
-@app.get("/projects",
+@app.get("/projects/active",
          response_model=List[ProjectTag],
          summary="Get Active Projects",
          description="Fetches a list of all project tags that are marked as active in the database.")
@@ -68,6 +68,55 @@ def get_active_projects(db: Database = Depends(get_db)):
         logger.warning("No active projects found in the database.")
         # Return an empty list, which is valid. Frontend should handle this.
     return projects
+
+@app.get("/projects",
+            response_model=List[StandupMeetingConfig],
+            summary="Get All Projects",
+            description="Fetches a list of all project configurations from the database.")
+def get_all_projects(db: Database = Depends(get_db)):
+    """
+    Endpoint to retrieve all project configurations.
+    """
+    repo = ProjectRepository(db)
+    return repo.get_all_projects()
+
+
+@app.post("/projects",
+            response_model=StandupMeetingConfig,
+            summary="Create a new project",
+            description="Adds a new project configuration to the database.")
+def create_project(project: ProjectCreate, db: Database = Depends(get_db)):
+    repo = ProjectRepository(db)
+    db_project = repo.get_project_by_tag(project.project_tag)
+    if db_project:
+        raise HTTPException(status_code=400, detail="Project tag already exists.")
+    
+    new_project = repo.create_project(project)
+    if not new_project:
+        raise HTTPException(status_code=500, detail="Failed to create project.")
+    return new_project
+
+
+@app.put("/projects/{project_tag}",
+            response_model=StandupMeetingConfig,
+            summary="Update a project",
+            description="Updates an existing project configuration.")
+def update_project(project_tag: str, project_update: ProjectUpdate, db: Database = Depends(get_db)):
+    repo = ProjectRepository(db)
+    updated_project = repo.update_project(project_tag, project_update)
+    if not updated_project:
+        raise HTTPException(status_code=404, detail=f"Project with tag '{project_tag}' not found.")
+    return updated_project
+
+
+@app.delete("/projects/{project_tag}",
+            summary="Delete a project",
+            description="Deletes a project configuration from the database.")
+def delete_project(project_tag: str, db: Database = Depends(get_db)):
+    repo = ProjectRepository(db)
+    if not repo.delete_project(project_tag):
+        raise HTTPException(status_code=404, detail=f"Project with tag '{project_tag}' not found.")
+    return {"message": f"Project '{project_tag}' deleted successfully."}
 
 
 @app.post("/analyze",

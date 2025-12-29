@@ -4,8 +4,8 @@ from pymongo import ASCENDING
 from pymongo.errors import PyMongoError
 from typing import List, Optional
 
-from app.models.schemas import StandupMeetingConfig, ProjectTag
-
+from app.models.schemas import StandupMeetingConfig, ProjectTag, ProjectCreate, ProjectUpdate
+from datetime import datetime
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -67,3 +67,92 @@ class ProjectRepository:
             logger.error(f"Database error while fetching all active projects: {e}")
 
         return projects
+    
+    def get_all_projects(self) -> List[StandupMeetingConfig]:
+        """
+        Fetches all project configurations.
+
+        Returns:
+            A list of StandupMeetingConfig objects.
+        """
+        projects = []
+        try:
+            cursor = self.collection.find({})
+            for doc in cursor:
+                projects.append(StandupMeetingConfig(**doc))
+        except PyMongoError as e:
+            logger.error(f"Database error while fetching all projects: {e}")
+        return projects
+
+    def create_project(self, project: ProjectCreate) -> Optional[StandupMeetingConfig]:
+        """
+        Creates a new project configuration.
+
+        Args:
+            project: The project details.
+
+        Returns:
+            The created project configuration or None if it fails.
+        """
+        try:
+            now = datetime.utcnow()
+            new_project = self.collection.insert_one({
+                "project_tag": project.project_tag,
+                "organizer_email": project.organizer_email,
+                "meeting_link": project.meeting_link,
+                "is_active": True,
+                "created_at": now,
+                "updated_at": now
+            })
+            if new_project.inserted_id:
+                created_doc = self.collection.find_one({"_id": new_project.inserted_id})
+                return StandupMeetingConfig(**created_doc)
+        except PyMongoError as e:
+            logger.error(f"Database error while creating project '{project.project_tag}': {e}")
+        return None
+
+    def update_project(self, project_tag: str, project_update: ProjectUpdate) -> Optional[StandupMeetingConfig]:
+        """
+        Updates an existing project configuration.
+
+        Args:
+            project_tag: The tag of the project to update.
+            project_update: The fields to update.
+
+        Returns:
+            The updated project configuration or None if it fails.
+        """
+        update_data = {k: v for k, v in project_update.model_dump().items() if v is not None}
+        if not update_data:
+            return self.get_project_by_tag(project_tag) # Nothing to update
+
+        update_data["updated_at"] = datetime.utcnow()
+
+        try:
+            result = self.collection.find_one_and_update(
+                {"project_tag": project_tag},
+                {"$set": update_data},
+                return_document=True
+            )
+            if result:
+                return StandupMeetingConfig(**result)
+        except PyMongoError as e:
+            logger.error(f"Database error while updating project '{project_tag}': {e}")
+        return None
+
+    def delete_project(self, project_tag: str) -> bool:
+        """
+        Deletes a project configuration.
+
+        Args:
+            project_tag: The tag of the project to delete.
+
+        Returns:
+            True if deleted, False otherwise.
+        """
+        try:
+            result = self.collection.delete_one({"project_tag": project_tag})
+            return result.deleted_count > 0
+        except PyMongoError as e:
+            logger.error(f"Database error while deleting project '{project_tag}': {e}")
+        return False
