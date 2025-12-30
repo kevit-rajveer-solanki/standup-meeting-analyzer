@@ -89,6 +89,10 @@ class AnalyticsService:
                 meeting_durations.append(duration)
             
             # Fetch and process attendees for this meeting
+            ist_zone = pytz.timezone('Asia/Kolkata')
+            meeting_start_ist = meeting_dt.astimezone(ist_zone)
+            meeting_start_time = meeting_start_ist.time().isoformat(timespec='seconds')
+            
             records_url = f"https://graph.microsoft.com/v1.0/users/{organizer_id}/onlineMeetings/{meeting_id}/attendanceReports/{report['id']}/attendanceRecords"
             records = self.graph_service.get_attendance_records(records_url)
 
@@ -110,9 +114,6 @@ class AnalyticsService:
                 intervals = rec.get('attendanceIntervals', [])
                 if intervals:
                     try:
-                        utc_zone = pytz.utc
-                        ist_zone = pytz.timezone('Asia/Kolkata')
-
                         join_times = [parser.parse(i['joinDateTime']) for i in intervals if i.get('joinDateTime')]
                         leave_times = [parser.parse(i['leaveDateTime']) for i in intervals if i.get('leaveDateTime')]
 
@@ -137,6 +138,7 @@ class AnalyticsService:
                     "Name": details['name'],
                     "Team": details['team'],
                     "Date": str(meeting_date),
+                    "MeetingStartTime": meeting_start_time,
                     "OnTime": is_on_time,
                     "JoinTime": join_time,
                     "LeaveTime": leave_time

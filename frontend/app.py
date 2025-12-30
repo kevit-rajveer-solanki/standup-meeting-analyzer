@@ -192,8 +192,15 @@ def render_analytics_page():
                                 daily_df = pd.DataFrame(data['daily_attendance'])
                                 daily_df['JoinTime'] = daily_df['JoinTime'].fillna('N/A')
                                 daily_df['LeaveTime'] = daily_df['LeaveTime'].fillna('N/A')
+                                
+                                # Define columns to display
+                                display_cols = ['Name', 'Date', 'OnTime', 'JoinTime', 'LeaveTime']
+                                if 'MeetingStartTime' in daily_df.columns:
+                                    daily_df['MeetingStartTime'] = daily_df['MeetingStartTime'].fillna('N/A')
+                                    display_cols.insert(2, 'MeetingStartTime')
+
                                 st.dataframe(
-                                    daily_df[['Name', 'Date', 'JoinTime', 'LeaveTime']],
+                                    daily_df[display_cols],
                                     hide_index=True,
                                     width="stretch"
                                 )
