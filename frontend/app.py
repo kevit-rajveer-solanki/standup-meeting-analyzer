@@ -190,6 +190,7 @@ def render_analytics_page():
                             st.subheader("Daily Join and Leave Times")
                             if 'daily_attendance' in data and data['daily_attendance']:
                                 daily_df = pd.DataFrame(data['daily_attendance'])
+                                daily_df = daily_df[daily_df['Name'] != 'Unknown'] # Exclude 'Unknown' names
                                 daily_df['JoinTime'] = daily_df['JoinTime'].fillna('N/A')
                                 daily_df['LeaveTime'] = daily_df['LeaveTime'].fillna('N/A')
                                 

@@ -123,7 +123,7 @@ class AnalyticsService:
                             join_time = first_join_ist.time().isoformat(timespec='seconds')
                             
                             # Punctuality check against the actual meeting start time
-                            if (first_join_utc - meeting_dt).total_seconds() / 60 <= 5:
+                            if (first_join_utc - meeting_dt).total_seconds() / 60 <= 7:
                                 is_on_time = True
 
                         if leave_times:
@@ -149,10 +149,19 @@ class AnalyticsService:
 
         # 4. Aggregate Data with Pandas
         df = pd.DataFrame(all_attendees)
+
+        # To prevent >100% punctuality, handle multiple reports on the same day.
+        # A person is on time for a day if they were on time for ANY meeting that day.
+        if not df.empty:
+            df.sort_values(['Name', 'Date', 'OnTime'], ascending=[True, True, False], inplace=True)
+            df_cleaned = df.drop_duplicates(subset=['Name', 'Date'], keep='first')
+        else:
+            df_cleaned = df  # Handle empty dataframe case
+
         total_meetings = df['Date'].nunique()
 
-        # Person-specific metrics
-        person_stats = df.groupby(['Team', 'Name']).agg(
+        # Person-specific metrics (use the cleaned dataframe)
+        person_stats = df_cleaned.groupby(['Team', 'Name']).agg(
             DaysAttended=('Date', 'nunique'),
             DaysOnTime=('OnTime', 'sum')
         ).reset_index()
