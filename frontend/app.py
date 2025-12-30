@@ -150,7 +150,7 @@ def render_analytics_page():
                                     texttemplate="%{text:.1f}%",
                                     textposition="outside"
                                 )
-                                st.plotly_chart(fig_attendance, use_container_width=True)
+                                st.plotly_chart(fig_attendance, width="stretch")
 
                             # ================= Punctuality Chart (In Box) =================
                             with st.container(border=True):
@@ -172,86 +172,15 @@ def render_analytics_page():
                                     texttemplate="%{text:.1f}%",
                                     textposition="outside"
                                 )
-                                st.plotly_chart(fig_punctuality, use_container_width=True)
+                                st.plotly_chart(fig_punctuality, width="stretch")
 
-                            st.divider()
 
-                            # ================= Custom Color Highlight Table =================
-                            st.subheader("Attendance & Punctuality Highlights (Top 5 & Bottom 5)")
-
-                            # 1. Identify Top 5 and Bottom 5 rows
-                            top_5 = sorted_df.head(5).copy()
-                            bottom_5 = sorted_df.tail(5).copy()
-
-                            # Combine
-                            highlight_df = pd.concat([top_5, bottom_5]).drop_duplicates(subset=['Name']).reset_index(
-                                drop=True)
-
-                            # 2. Define Custom Color Map
-                            # Green Fading: Dark Green -> Light Green
-                            green_palette = [
-                                ('#1b5e20', 'white'),  # Rank 1 (Darkest)
-                                ('#2e7d32', 'white'),  # Rank 2
-                                ('#4caf50', 'black'),  # Rank 3
-                                ('#81c784', 'black'),  # Rank 4
-                                ('#c8e6c9', 'black')  # Rank 5 (Lightest)
-                            ]
-
-                            # Red Fading: Light Red -> Dark Red (Reversed application)
-                            red_palette = [
-                                ('#ffcdd2', 'black'),  # Lightest
-                                ('#e57373', 'black'),
-                                ('#f44336', 'white'),
-                                ('#c62828', 'white'),
-                                ('#b71c1c', 'white')  # Darkest
-                            ]
-
-                            # Map Names to Colors
-                            row_styles = {}
-
-                            # Apply Greens to Top 5
-                            for i, row_idx in enumerate(top_5.index):
-                                if i < len(green_palette):
-                                    name = top_5.loc[row_idx, 'Name']
-                                    bg, txt = green_palette[i]
-                                    row_styles[name] = f"background-color: {bg}; color: {txt}"
-
-                            # Apply Reds to Bottom 5 (Reverse order so last one is darkest)
-                            for i in range(len(bottom_5)):
-                                if i < len(red_palette):
-                                    palette_index = (len(red_palette) - 1) - (len(bottom_5) - 1 - i)
-                                    if palette_index < 0: palette_index = 0
-                                    name = bottom_5.iloc[i]['Name']
-                                    if name not in row_styles:
-                                        bg, txt = red_palette[palette_index]
-                                        row_styles[name] = f"background-color: {bg}; color: {txt}"
-
-                            # 3. Styling Function
-                            def apply_custom_colors(row):
-                                # Get the computed color for this person
-                                color_style = row_styles.get(row['Name'], "")
-
-                                # Return style list matching columns: [Name, Attendance %, Punctuality %]
-                                # Name gets "", others get the color
-                                return ["", color_style, color_style]
-
-                            st.dataframe(
-                                highlight_df[['Name', 'Attendance %', 'Punctuality %']]
-                                .style
-                                .apply(apply_custom_colors, axis=1)
-                                .format({
-                                    'Attendance %': '{:.1f}%',
-                                    'Punctuality %': '{:.1f}%'
-                                }),
-                                hide_index=True,
-                                use_container_width=True
-                            )
 
                         with sub_tab2:
                             st.subheader("Full Team Breakdown")
                             st.dataframe(
                                 sorted_df[['Name', 'Team', 'Days Attended', 'Attendance %', 'Punctuality %']]
-                                .style.background_gradient(subset=['Attendance %'], cmap="Blues")
+                                .style
                                 .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
                                 hide_index=True,
                                 width="stretch",
