@@ -10,3 +10,4 @@ matplotlib
 msal
 streamlit
 pytz
+plotly

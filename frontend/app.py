@@ -1,15 +1,21 @@
 import streamlit as st
 import requests
 import pandas as pd
+import plotly.express as px
 
-
-st.set_page_config(layout="wide", page_title="Standup Performance Analyzer V2")
+# ---------------- Page Config ----------------
+st.set_page_config(
+    layout="wide",
+    page_title="Standup Performance Analyzer V2",
+    page_icon="https://kevit.io/wp-content/uploads/2020/03/Kevit.svg"
+)
 st.title("Standup Performance Analyzer")
 
 BACKEND_URL = "http://localhost:8000"
 
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+# ---------------- API Helpers ----------------
+@st.cache_data(ttl=300)
 def get_projects():
     """Fetches the list of active projects from the backend."""
     try:
@@ -23,7 +29,8 @@ def get_projects():
         st.error("Connection Error: Could not connect to the backend.")
         return []
 
-@st.cache_data(ttl=5) # Short cache for admin page
+
+@st.cache_data(ttl=5)
 def get_all_projects():
     """Fetches all projects from the backend."""
     try:
@@ -38,7 +45,7 @@ def get_all_projects():
         return []
 
 
-# --- Page Rendering ---
+# ---------------- Analytics Page ----------------
 def render_analytics_page():
     # --- Sidebar for Analytics ---
     with st.sidebar:
@@ -48,21 +55,19 @@ def render_analytics_page():
                 "https://kevit.io/wp-content/uploads/2020/03/Kevit.svg",
                 width=100
             )
-        with col2:
-            st.markdown("## Standup Performance Analyzer")
 
         st.header("Report Settings")
-        
+
         projects = get_projects()
         if not projects:
             st.warning("No active projects found. Please configure projects in the backend.")
             st.stop()
-            
+
         project_tag = st.selectbox("Select Project", options=projects)
-        
+
         s_date = st.date_input("Start Date")
         e_date = st.date_input("End Date")
-        
+
         btn = st.button("Generate Report", type="primary", width="stretch")
 
     # --- Main Content ---
@@ -81,7 +86,7 @@ def render_analytics_page():
                     st.error(f"Error from backend: {res.json().get('detail', res.text)}")
                 else:
                     data = res.json()
-                    
+
                     if "message" in data or not data.get("performance_data"):
                         st.warning(data.get("message", "No attendance data found for this period."))
                     else:
@@ -112,58 +117,138 @@ def render_analytics_page():
                             f"{data.get('avg_users_per_meeting', 0):.1f}",
                             help="Average number of team members attending each meeting."
                         )
-                        
-                        st.divider()
 
-                        # --- DataFrames ---
+                        # --- Data Prep ---
                         df = pd.DataFrame(data['performance_data'])
-                        # Exclude 'Unknown' users from the DataFrame
                         df = df[df['Name'] != 'Unknown']
                         df.rename(columns={'DaysAttended': 'Days Attended', 'DaysOnTime': 'Days On Time'}, inplace=True)
-                        
+
                         sorted_df = df.sort_values(by='Attendance %', ascending=False)
-                        top_5 = sorted_df.head(5)
-                        bottom_5 = sorted_df.tail(5)
 
                         # --- Tabs for Display ---
-                        sub_tab1, sub_tab2, sub_tab3 = st.tabs(["Performance Highlights", "Full Team Report", "Join/Leave Details"])
+                        sub_tab1, sub_tab2, sub_tab3 = st.tabs(
+                            ["Performance Highlights", "Full Team Report", "Join/Leave Details"])
 
                         with sub_tab1:
-                            chart_data = pd.concat([top_5, bottom_5])
+                            # ================= Attendance Chart (In Box) =================
+                            with st.container(border=True):
+                                st.subheader("Attendance Rate (%)")
+                                fig_attendance = px.bar(
+                                    sorted_df,
+                                    x="Name",
+                                    y="Attendance %",
+                                    text="Attendance %",
+                                )
+                                fig_attendance.update_layout(
+                                    xaxis_tickangle=-35,
+                                    yaxis_title="Attendance %",
+                                    xaxis_title="Team Member",
+                                    showlegend=False,
+                                    margin=dict(t=10, l=20, r=20, b=40),
+                                )
+                                fig_attendance.update_traces(
+                                    texttemplate="%{text:.1f}%",
+                                    textposition="outside"
+                                )
+                                st.plotly_chart(fig_attendance, use_container_width=True)
 
-                            st.subheader("Attendance Rate (%)")
-                            st.bar_chart(chart_data, x='Name', y='Attendance %', color="#0068C9")
-
-                            st.subheader("Punctuality Rate (%)")
-                            st.bar_chart(chart_data, x='Name', y='Punctuality %', color="#0068C9")
+                            # ================= Punctuality Chart (In Box) =================
+                            with st.container(border=True):
+                                st.subheader("Punctuality Rate (%)")
+                                fig_punctuality = px.bar(
+                                    sorted_df,
+                                    x="Name",
+                                    y="Punctuality %",
+                                    text="Punctuality %",
+                                )
+                                fig_punctuality.update_layout(
+                                    xaxis_tickangle=-35,
+                                    yaxis_title="Punctuality %",
+                                    xaxis_title="Team Member",
+                                    showlegend=False,
+                                    margin=dict(t=10, l=20, r=20, b=40),
+                                )
+                                fig_punctuality.update_traces(
+                                    texttemplate="%{text:.1f}%",
+                                    textposition="outside"
+                                )
+                                st.plotly_chart(fig_punctuality, use_container_width=True)
 
                             st.divider()
-                            
-                            st.subheader("Attendance & Punctuality Highlights")
-                            
-                            # Custom function to apply color based on whether the row is in top or bottom 5
-                            def style_top_bottom(row):
-                                styles = [''] * len(row)
-                                if row['Name'] in top_5['Name'].values:
-                                    # Using a light green for the 'Attendance %' cell
-                                    styles[row.keys().get_loc('Attendance %')] = 'background-color: #d4edda'
-                                elif row['Name'] in bottom_5['Name'].values:
-                                    # Using a light red for the 'Attendance %' cell
-                                    styles[row.keys().get_loc('Attendance %')] = 'background-color: #f8d7da'
-                                return styles
+
+                            # ================= Custom Color Highlight Table =================
+                            st.subheader("Attendance & Punctuality Highlights (Top 5 & Bottom 5)")
+
+                            # 1. Identify Top 5 and Bottom 5 rows
+                            top_5 = sorted_df.head(5).copy()
+                            bottom_5 = sorted_df.tail(5).copy()
+
+                            # Combine
+                            highlight_df = pd.concat([top_5, bottom_5]).drop_duplicates(subset=['Name']).reset_index(
+                                drop=True)
+
+                            # 2. Define Custom Color Map
+                            # Green Fading: Dark Green -> Light Green
+                            green_palette = [
+                                ('#1b5e20', 'white'),  # Rank 1 (Darkest)
+                                ('#2e7d32', 'white'),  # Rank 2
+                                ('#4caf50', 'black'),  # Rank 3
+                                ('#81c784', 'black'),  # Rank 4
+                                ('#c8e6c9', 'black')  # Rank 5 (Lightest)
+                            ]
+
+                            # Red Fading: Light Red -> Dark Red (Reversed application)
+                            red_palette = [
+                                ('#ffcdd2', 'black'),  # Lightest
+                                ('#e57373', 'black'),
+                                ('#f44336', 'white'),
+                                ('#c62828', 'white'),
+                                ('#b71c1c', 'white')  # Darkest
+                            ]
+
+                            # Map Names to Colors
+                            row_styles = {}
+
+                            # Apply Greens to Top 5
+                            for i, row_idx in enumerate(top_5.index):
+                                if i < len(green_palette):
+                                    name = top_5.loc[row_idx, 'Name']
+                                    bg, txt = green_palette[i]
+                                    row_styles[name] = f"background-color: {bg}; color: {txt}"
+
+                            # Apply Reds to Bottom 5 (Reverse order so last one is darkest)
+                            for i in range(len(bottom_5)):
+                                if i < len(red_palette):
+                                    palette_index = (len(red_palette) - 1) - (len(bottom_5) - 1 - i)
+                                    if palette_index < 0: palette_index = 0
+                                    name = bottom_5.iloc[i]['Name']
+                                    if name not in row_styles:
+                                        bg, txt = red_palette[palette_index]
+                                        row_styles[name] = f"background-color: {bg}; color: {txt}"
+
+                            # 3. Styling Function
+                            def apply_custom_colors(row):
+                                # Get the computed color for this person
+                                color_style = row_styles.get(row['Name'], "")
+
+                                # Return style list matching columns: [Name, Attendance %, Punctuality %]
+                                # Name gets "", others get the color
+                                return ["", color_style, color_style]
 
                             st.dataframe(
-                                chart_data[['Name', 'Attendance %', 'Punctuality %']]
+                                highlight_df[['Name', 'Attendance %', 'Punctuality %']]
                                 .style
-                                .apply(style_top_bottom, axis=1)
-                                .format({'Attendance %': '{:.1f}%', 'Punctuality %': '{:.1f}%'}),
-                                hide_index=True
+                                .apply(apply_custom_colors, axis=1)
+                                .format({
+                                    'Attendance %': '{:.1f}%',
+                                    'Punctuality %': '{:.1f}%'
+                                }),
+                                hide_index=True,
+                                use_container_width=True
                             )
-                            st.caption("Highlighting top and bottom 5 performers by attendance.")
 
                         with sub_tab2:
                             st.subheader("Full Team Breakdown")
-                            # Use a tooltip on the dataframe itself for the main explanation
                             st.dataframe(
                                 sorted_df[['Name', 'Team', 'Days Attended', 'Attendance %', 'Punctuality %']]
                                 .style.background_gradient(subset=['Attendance %'], cmap="Blues")
@@ -187,12 +272,15 @@ def render_analytics_page():
                                 st.warning("No daily attendance data available.")
 
             except requests.ConnectionError as e:
-                st.error(f"Connection Error: Could not connect to the backend at {BACKEND_URL}. Please ensure it is running.")
+                st.error(
+                    f"Connection Error: Could not connect to the backend at {BACKEND_URL}. Please ensure it is running.")
             except Exception as e:
                 st.error(f"An unexpected error occurred: {e}")
     else:
         st.info("Select a project and date range in the sidebar to generate a report.")
 
+
+# ---------------- Manage Projects Page ----------------
 def render_manage_projects_page():
     st.header("Manage Projects")
 
@@ -207,7 +295,7 @@ def render_manage_projects_page():
                 email = st.text_input("Organizer Email", value=project_to_edit['organizer_email'])
                 link = st.text_input("Meeting Link", value=project_to_edit['meeting_link'])
                 is_active = st.checkbox("Is Active", value=project_to_edit['is_active'])
-                
+
                 update_btn, cancel_btn = st.columns(2)
                 if update_btn.form_submit_button("Update Project", width="stretch"):
                     payload = {"organizer_email": email, "meeting_link": link, "is_active": is_active}
@@ -222,7 +310,7 @@ def render_manage_projects_page():
                             st.error(f"Failed to update project: {res.json().get('detail', res.text)}")
                     except requests.ConnectionError:
                         st.error("Connection Error.")
-                
+
                 if cancel_btn.form_submit_button("Cancel", width="stretch"):
                     del st.session_state['editing_project']
                     st.rerun()
@@ -270,7 +358,7 @@ def render_manage_projects_page():
         with st.expander(f"{project['project_tag']} ({'Active' if project['is_active'] else 'Inactive'})"):
             st.write(f"**Organizer Email:** {project['organizer_email']}")
             st.write(f"**Meeting Link:** {project['meeting_link']}")
-            
+
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Edit", key=f"edit_{project['project_tag']}", width="stretch"):
@@ -289,7 +377,8 @@ def render_manage_projects_page():
                     except requests.ConnectionError:
                         st.error("Connection Error: Could not connect to the backend.")
 
-# --- Main Navigation ---
+
+# ---------------- Navigation ----------------
 tab1, tab2 = st.tabs(["Analytics", "Manage Projects"])
 
 with tab1:
