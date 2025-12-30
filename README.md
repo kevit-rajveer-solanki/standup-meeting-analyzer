@@ -142,7 +142,7 @@ You will need **two separate terminals** running simultaneously. Ensure your vir
 
 In the project's root directory, run:
 ```shell
-python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn backend.apps.fastapi.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 The API server will be running at `http://localhost:8000`.
 

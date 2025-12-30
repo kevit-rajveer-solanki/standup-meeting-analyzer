@@ -5,9 +5,9 @@ import pandas as pd
 import pytz
 from typing import Dict, Any, List
 
-from ..services.graph_service import GraphService
-from ..utils.date_utils import is_working_day, count_working_days
-from ..models.schemas import StandupMeetingConfig
+from backend.apps.libs.services.fastapi.graph_service import GraphService
+from backend.apps.libs.utils.common.helpers.date_utils import is_working_day, count_working_days
+from backend.apps.libs.utils.db.mongodb.schemas.schemas import StandupMeetingConfig
 
 # Configure logging
 logger = logging.getLogger(__name__)

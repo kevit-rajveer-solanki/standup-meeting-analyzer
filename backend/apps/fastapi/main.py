@@ -6,12 +6,12 @@ from pymongo.database import Database
 
 # Project imports
 from .auth.graph_auth import get_auth_token
-from .config import settings  # This will fail fast if env vars are missing
-from .db.mongo import mongo_manager, get_db
-from .db.repositories import ProjectRepository
-from .models.schemas import AnalysisRequest, ProjectTag, StandupMeetingConfig, ProjectCreate, ProjectUpdate
-from .services.analytics import AnalyticsService
-from .services.graph_service import GraphService
+from ..libs.utils.config.config import settings  # This will fail fast if env vars are missing
+from ..libs.utils.db.mongodb.mongo import mongo_manager, get_db
+from ..libs.utils.db.mongodb.repositories import ProjectRepository
+from ..libs.utils.db.mongodb.schemas.schemas import AnalysisRequest, ProjectTag, StandupMeetingConfig, ProjectCreate, ProjectUpdate
+from ..libs.services.fastapi.analytics import AnalyticsService
+from ..libs.services.fastapi.graph_service import GraphService
 from typing import List
 
 # Configure logging

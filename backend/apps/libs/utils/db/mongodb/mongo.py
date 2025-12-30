@@ -1,7 +1,7 @@
 import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from ..config import settings
+from backend.apps.libs.utils.config.config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)

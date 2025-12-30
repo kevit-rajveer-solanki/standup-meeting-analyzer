@@ -2,7 +2,7 @@ import logging
 import msal
 from typing import Optional
 
-from ..config import settings
+from backend.apps.libs.utils.config.config import settings
 
 # Configure logging
 logger = logging.getLogger(__name__)
