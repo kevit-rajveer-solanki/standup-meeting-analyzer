@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     MONGO_URI: str
     MONGO_DB_NAME: str
     GRAPH_SCOPE: str = "https://graph.microsoft.com/.default"
+    HOST: str
+    FASTAPI_PORT: int
 
     model_config = SettingsConfigDict(
         env_file=".env",

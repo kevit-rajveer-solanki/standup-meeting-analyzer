@@ -172,5 +172,5 @@ if __name__ == "__main__":
 
     # This will now automatically use the lifespan events.
     # Note: For production, you'd use a proper ASGI server like Gunicorn with Uvicorn workers.
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, app_dir="backend/app")
+    uvicorn.run("backend.apps.fastapi.main:app", host=settings.HOST, port=settings.FASTAPI_PORT, reload=False, app_dir="backend/app")
 
