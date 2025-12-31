@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 import plotly.express as px
 
-# ---------------- Page Config ----------------
 st.set_page_config(
     layout="wide",
     page_title="Standup Performance Analyzer V2",
@@ -14,7 +13,6 @@ st.title("Standup Performance Analyzer")
 BACKEND_URL = "http://localhost:8000"
 
 
-# ---------------- API Helpers ----------------
 @st.cache_data(ttl=300)
 def get_projects():
     """Fetches the list of active projects from the backend."""
@@ -45,7 +43,6 @@ def get_all_projects():
         return []
 
 
-# ---------------- Analytics Page ----------------
 def render_analytics_page():
     # --- Sidebar for Analytics ---
     with st.sidebar:
@@ -70,7 +67,6 @@ def render_analytics_page():
 
         btn = st.button("Generate Report", type="primary", width="stretch")
 
-    # --- Main Content ---
     st.header("Analytics Dashboard")
     if btn:
         with st.spinner("Analyzing standup data... This may take a moment."):
@@ -90,7 +86,6 @@ def render_analytics_page():
                     if "message" in data or not data.get("performance_data"):
                         st.warning(data.get("message", "No attendance data found for this period."))
                     else:
-                        # --- KPIs ---
                         kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
                         kpi1.metric(
                             "Working Days",
@@ -118,19 +113,16 @@ def render_analytics_page():
                             help="Average number of team members attending each meeting."
                         )
 
-                        # --- Data Prep ---
                         df = pd.DataFrame(data['performance_data'])
                         df = df[df['Name'] != 'Unknown']
                         df.rename(columns={'DaysAttended': 'Days Attended', 'DaysOnTime': 'Days On Time'}, inplace=True)
 
                         sorted_df = df.sort_values(by='Attendance %', ascending=False)
 
-                        # --- Tabs for Display ---
                         sub_tab1, sub_tab2, sub_tab3 = st.tabs(
                             ["Performance Highlights", "Full Team Report", "Join/Leave Details"])
 
                         with sub_tab1:
-                            # ================= Attendance Chart (In Box) =================
                             with st.container(border=True):
                                 st.subheader("Attendance Rate (%)")
                                 fig_attendance = px.bar(
@@ -152,7 +144,6 @@ def render_analytics_page():
                                 )
                                 st.plotly_chart(fig_attendance, width="stretch")
 
-                            # ================= Punctuality Chart (In Box) =================
                             with st.container(border=True):
                                 st.subheader("Punctuality Rate (%)")
                                 fig_punctuality = px.bar(
@@ -194,7 +185,6 @@ def render_analytics_page():
                                 daily_df['JoinTime'] = daily_df['JoinTime'].fillna('N/A')
                                 daily_df['LeaveTime'] = daily_df['LeaveTime'].fillna('N/A')
                                 
-                                # Define columns to display
                                 display_cols = ['Name', 'Date', 'OnTime', 'JoinTime', 'LeaveTime']
                                 if 'MeetingStartTime' in daily_df.columns:
                                     daily_df['MeetingStartTime'] = daily_df['MeetingStartTime'].fillna('N/A')
@@ -217,11 +207,9 @@ def render_analytics_page():
         st.info("Select a project and date range in the sidebar to generate a report.")
 
 
-# ---------------- Manage Projects Page ----------------
 def render_manage_projects_page():
     st.header("Manage Projects")
 
-    # --- Edit Project Form ---
     if 'editing_project' in st.session_state:
         project_tag_to_edit = st.session_state['editing_project']
         project_to_edit = next((p for p in get_all_projects() if p['project_tag'] == project_tag_to_edit), None)
@@ -252,7 +240,6 @@ def render_manage_projects_page():
                     del st.session_state['editing_project']
                     st.rerun()
 
-    # --- Add New Project Form ---
     with st.form("add_project_form", clear_on_submit=True):
         st.subheader("Add New Project")
         new_project_tag = st.text_input("Project Tag (must be unique)")
@@ -281,7 +268,6 @@ def render_manage_projects_page():
 
     st.divider()
 
-    # --- Existing Projects ---
     st.subheader("Existing Projects")
     if st.button("Refresh List"):
         st.cache_data.clear()
@@ -315,7 +301,6 @@ def render_manage_projects_page():
                         st.error("Connection Error: Could not connect to the backend.")
 
 
-# ---------------- Navigation ----------------
 tab1, tab2 = st.tabs(["Analytics", "Manage Projects"])
 
 with tab1:

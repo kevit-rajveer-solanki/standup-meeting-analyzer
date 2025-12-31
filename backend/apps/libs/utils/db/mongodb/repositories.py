@@ -6,7 +6,6 @@ from typing import List, Optional
 
 from .schemas.schemas import StandupMeetingConfig, ProjectTag, ProjectCreate, ProjectUpdate
 from datetime import datetime
-# Configure logging
 logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "standup_meetings"

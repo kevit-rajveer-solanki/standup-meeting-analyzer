@@ -4,9 +4,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo.database import Database
 
-# Project imports
 from .auth.graph_auth import get_auth_token
-from ..libs.utils.config.config import settings  # This will fail fast if env vars are missing
+from ..libs.utils.config.config import settings
 from ..libs.utils.db.mongodb.mongo import mongo_manager, get_db
 from ..libs.utils.db.mongodb.repositories import ProjectRepository
 from ..libs.utils.db.mongodb.schemas.schemas import AnalysisRequest, ProjectTag, StandupMeetingConfig, ProjectCreate, ProjectUpdate
@@ -14,7 +13,6 @@ from ..libs.services.fastapi.analytics import AnalyticsService
 from ..libs.services.fastapi.graph_service import GraphService
 from typing import List
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -27,7 +25,6 @@ async def lifespan(app: FastAPI):
     """
     logger.info("Application startup...")
     mongo_manager.connect()
-    # Create a repository instance and ensure indexes are created
     db = mongo_manager.db
     project_repo = ProjectRepository(db)
     project_repo.create_indexes()
@@ -46,10 +43,10 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -66,7 +63,6 @@ def get_active_projects(db: Database = Depends(get_db)):
     projects = repo.get_all_active_projects()
     if not projects:
         logger.warning("No active projects found in the database.")
-        # Return an empty list, which is valid. Frontend should handle this.
     return projects
 
 @app.get("/projects",
@@ -136,7 +132,6 @@ def analyze_standup(
     logger.info(f"Received analysis request for project: {req.project_tag}")
     repo = ProjectRepository(db)
 
-    # 1. Get project configuration from the database
     project_config = repo.get_project_by_tag(req.project_tag)
     if not project_config:
         logger.error(f"Project tag '{req.project_tag}' not found or is inactive.")
@@ -145,7 +140,6 @@ def analyze_standup(
             detail=f"Project configuration for tag '{req.project_tag}' not found."
         )
 
-    # The old logic is now refactored into the services layer.
     graph_service = GraphService(token)
     analytics_service = AnalyticsService(graph_service)
 
@@ -157,7 +151,6 @@ def analyze_standup(
     )
 
     if "error" in analysis_result:
-        # Service layer encountered a problem (e.g., organizer not found)
         raise HTTPException(
             status_code=404,
             detail=analysis_result["error"]
@@ -166,11 +159,8 @@ def analyze_standup(
     return analysis_result
 
 
-# The uvicorn runner is kept for local development convenience.
 if __name__ == "__main__":
     import uvicorn
 
-    # This will now automatically use the lifespan events.
-    # Note: For production, you'd use a proper ASGI server like Gunicorn with Uvicorn workers.
     uvicorn.run("backend.apps.fastapi.main:app", host=settings.HOST, port=settings.FASTAPI_PORT, reload=False, app_dir="backend/app")
 

@@ -3,7 +3,6 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from backend.apps.libs.utils.config.config import settings
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +21,6 @@ class MongoManager:
         """
         try:
             self.client = MongoClient(settings.MONGO_URI)
-            # The ismaster command is cheap and does not require auth.
             self.client.admin.command('ismaster')
             self.db = self.client[settings.MONGO_DB_NAME]
             logger.info(f"Successfully connected to MongoDB database: {settings.MONGO_DB_NAME}")
@@ -39,7 +37,6 @@ class MongoManager:
             logger.info("MongoDB connection closed.")
 
 
-# Singleton instance for the database manager
 mongo_manager = MongoManager()
 
 
@@ -50,6 +47,5 @@ def get_db():
     a connection pool and manage connections per request.
     """
     if mongo_manager.db is None:
-        # This will be called on application startup
         raise RuntimeError("Database connection has not been initialized.")
     return mongo_manager.db

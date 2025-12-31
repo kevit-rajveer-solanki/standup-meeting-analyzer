@@ -4,7 +4,6 @@ from typing import Optional
 
 from backend.apps.libs.utils.config.config import settings
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 
@@ -51,7 +50,6 @@ class GraphAuth:
             return None
 
 
-# Singleton instance for the auth manager
 graph_auth_manager = GraphAuth()
 
 def get_auth_token() -> str:
@@ -61,6 +59,5 @@ def get_auth_token() -> str:
     """
     token = graph_auth_manager.get_token()
     if not token:
-        # This would ideally be a more specific HTTP exception
         raise Exception("Could not authenticate with Microsoft Graph API.")
     return token
