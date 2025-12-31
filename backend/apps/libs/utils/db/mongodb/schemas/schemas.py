@@ -39,3 +39,22 @@ class AnalysisRequest(BaseModel):
 
 class ProjectTag(BaseModel):
     project_tag: str
+
+
+class ProjectCreate(BaseModel):
+    """
+    Model for creating a new project configuration.
+    """
+    project_tag: str
+    organizer_email: str
+    meeting_link: str
+
+
+class ProjectUpdate(BaseModel):
+    """
+    Model for updating an existing project configuration.
+    All fields are optional.
+    """
+    organizer_email: Optional[str] = None
+    meeting_link: Optional[str] = None
+    is_active: Optional[bool] = None

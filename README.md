@@ -9,13 +9,13 @@ This application provides project-based performance metrics by pulling attendanc
 ## Key Features
 
 - **Project-Based Reporting**: Analyze different meetings by configuring them as distinct "projects".
+- **Project Management UI**: A built-in dashboard to easily add, edit, and delete project configurations without direct database access.
 - **Secure Authentication**: Implements the OAuth2 Client Credentials flow on the backend. No tokens or secrets are exposed to the frontend.
 - **Automated Metrics Calculation**:
   - **Attendance %**: Percentage of working-day meetings an individual attended.
   - **Punctuality %**: Percentage of attended meetings an individual joined on time (within 5 minutes).
   - **Average Meeting Duration**: The average length of standups in minutes.
   - **Average Attendees**: The average number of internal team members per meeting.
-- **Intelligent Filtering**: Automatically excludes weekends and filters out external guests from the analysis.
 - **Interactive Dashboard**:
   - High-level KPI cards for a quick overview.
   - "Top 5" and "Bottom 5" attendee tables to highlight trends.
@@ -39,21 +39,22 @@ The application follows a modern, decoupled architecture:
 .
 ├── backend/
 │   ├── app/
-│   │   ├── auth/          # MS Graph API authentication
-│   │   ├── db/            # MongoDB connection and repositories
-│   │   ├── models/        # Pydantic data schemas
-│   │   ├── services/      # Business logic and Graph API calls
-│   │   ├── utils/         # Helper utilities
-│   │   ├── config.py      # Environment variable management
-│   │   └── main.py        # FastAPI application entrypoint
-│   ├── .env             # (You create this) Environment variables
-│   └── requirements.txt
+│   ├── auth/          # MS Graph API authentication
+│   ├── db/            # MongoDB connection and repositories
+│   ├── models/        # Pydantic data schemas
+│   ├── services/      # Business logic and Graph API calls
+│   ├── utils/         # Helper utilities
+│   ├── config.py      # Environment variable management
+│   └── main.py        # FastAPI application entrypoint
+│   
 │
 ├── frontend/
 │   ├── app.py             # Streamlit application
-│   └── requirements.txt
+│   
 │
-└── .venv/                 # Virtual environment
+├── .env                   # (You create this) Environment variables
+├── example.env            # Example environment file
+└── ...
 ```
 
 ---
@@ -74,14 +75,51 @@ Clone this project to your local machine.
 
 ```shell
 git clone <your-repository-url>
-cd StandUPAnalyzer
+cd standup-meeting-analyzer
 ```
 
-### Step 2: Configure Environment Variables
+### Step 2: Create and Activate Virtual Environment
 
-Create a file named `.env` inside the `backend/` directory and populate it with your Azure and MongoDB details.
+Create and activate a virtual environment to manage project dependencies.
 
-**File: `backend/.env`**
+**On Windows:**
+```shell
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+**On Linux/macOS:**
+```shell
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### Step 3: Install Dependencies
+
+Install the required packages for both the frontend and backend.
+
+```shell
+# From the project root directory
+pip install -r requirements.txt
+```
+
+### Step 4: Configure Environment Variables
+
+Create a `.env` file in the **project root directory**. You can do this by copying the provided example file.
+
+**On Windows:**
+```shell
+copy example.env .env
+```
+
+**On Linux/macOS:**
+```shell
+cp example.env .env
+```
+
+Now, open the `.env` file and populate it with your Azure and MongoDB details.
+
+**File: `.env`**
 ```ini
 # Microsoft Graph API Credentials
 AZURE_CLIENT_ID=<Your Azure App Client ID>
@@ -96,68 +134,48 @@ MONGO_DB_NAME=standup_analytics
 GRAPH_SCOPE=https://graph.microsoft.com/.default
 ```
 
-### Step 3: Configure a Project in MongoDB
-
-You must add a meeting configuration to the database.
-
-1.  Connect to your MongoDB instance (e.g., using `mongosh`).
-2.  Run the following command, replacing the values with your actual meeting details:
-
-```javascript
-db.getSiblingDB('standup_analytics').standup_meetings.insertOne({
-  "project_tag": "DRVN101", // A unique name for your project
-  "organizer_email": "your.organizer.email@yourcompany.com",
-  "meeting_link": "https://teams.microsoft.com/l/meetup-join/", // The full meeting join link
-  "is_active": true,
-  "created_at": new Date(),
-  "updated_at": new Date()
-});
-```
-
-### Step 4: Install Dependencies
-
-This project uses a shared virtual environment.
-
-```shell
-# From the project root directory (e.g., StandUPAnalyzer)
-# Install backend packages
-\ .\venv\Scripts\pip.exe install -r backend\requirements.txt
-
-# Install frontend packages
-\ .\venv\Scripts\pip.exe install -r frontend\requirements.txt
-```
-
 ### Step 5: Run the Application
 
-You will need **two separate terminals** running simultaneously.
+You will need **two separate terminals** running simultaneously. Ensure your virtual environment is activated in both.
 
 **Terminal 1: Start the Backend**
 
 In the project's root directory, run:
 ```shell
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir backend --reload
+python -m uvicorn backend.apps.fastapi.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 The API server will be running at `http://localhost:8000`.
 
 **Terminal 2: Start the Frontend**
 
-In the project's root directory, activate the virtual environment and run:
+In the project's root directory, run:
 ```shell
-\ .\venv\Scripts\activate
 streamlit run frontend/app.py
 ```
 This will open the web interface in your browser.
 
 ## Usage
 
+### Generating a Report
+
 1.  Open the Streamlit URL in your browser.
-2.  Select the desired `Project` from the sidebar dropdown.
-3.  Choose the `Start Date` and `End Date` for your analysis.
-4.  Click **Generate Report**.
-5.  View the KPIs and analytics presented on the dashboard.
+2.  The application will open on the **Analytics** tab.
+3.  In the sidebar, select the desired `Project` from the dropdown.
+4.  Choose the `Start Date` and `End Date` for your analysis.
+5.  Click **Generate Report**.
+6.  View the KPIs and analytics presented on the dashboard.
+
+### Managing Projects
+
+The application now includes a UI for managing projects, so you no longer need to add them to the database manually.
+
+1.  Navigate to the **Manage Projects** tab.
+2.  **To add a new project**: Fill in the "Add New Project" form and click "Add Project".
+3.  **To edit or delete a project**: Find the project in the "Existing Projects" list, expand it, and click "Edit" or "Delete".
 
 ## Troubleshooting
 
-- **`ModuleNotFoundError: No module named 'app'`**: This typically means you are running the `uvicorn` command from the wrong directory. Ensure you are in the project's root folder (`StandUPAnalyzer`) and using the correct command specified in Step 5.
+- **`ModuleNotFoundError`**: This typically means you are running a command from the wrong directory or your virtual environment is not activated. Ensure you are in the project's root folder and the `(venv)` indicator is visible in your terminal prompt.
 - **Connection Error on Frontend**: This means the backend server is not running or is not accessible at `http://localhost:8000`. Check your backend terminal for errors.
-- **Error from backend: `... not found`**: This means the `organizer_email` or `meeting_link` in your MongoDB configuration is incorrect, or the application lacks the required Graph API permissions to access the data. Verify your MongoDB entry and Azure AD permissions.
+- **Error from backend: `... not found`**: This can mean the `organizer_email` or `meeting_link` for a project is incorrect, or the application lacks the required Graph API permissions. Use the "Manage Projects" UI to correct the details, or verify your Azure AD permissions.
+- **`ValidationError` on Startup**: This error means the backend failed to load the required environment variables from the `.env` file. Ensure your `.env` file is in the project root, is named correctly, and contains all the required fields.
