@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     GRAPH_SCOPE: str = "https://graph.microsoft.com/.default"
     HOST: str
     FASTAPI_PORT: int
+    BACKEND_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

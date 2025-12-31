@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
+import os
 
 st.set_page_config(
     layout="wide",
@@ -10,7 +11,8 @@ st.set_page_config(
 )
 st.title("Standup Performance Analyzer")
 
-BACKEND_URL = "http://localhost:8000"
+
+BACKEND_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000")
 
 
 @st.cache_data(ttl=300)
